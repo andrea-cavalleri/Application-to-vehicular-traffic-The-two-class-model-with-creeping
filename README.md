@@ -10,20 +10,24 @@ The model is based on the heterogeneous multiclass traffic model proposed by **F
 
 Classical macroscopic traffic models, such as the **Lighthill–Whitham–Richards (LWR) model**, describe traffic as a continuous flow governed by a conservation law:
 
-\[
-\partial_t \rho + \partial_x(\rho V(\rho)) = 0,
-\]
+$$
+\frac{\partial \rho}{\partial t}
++
+\frac{\partial}{\partial x}
+\left(\rho V(\rho)\right)
+= 0
+$$
 
 where:
 
-- \(\rho(x,t)\) is the traffic density;
-- \(V(\rho)\) is the velocity-density relation;
-- \(Q(\rho)=\rho V(\rho)\) is the traffic flow.
+- $\rho(x,t)$ is the traffic density;
+- $V(\rho)$ is the velocity-density relation;
+- $Q(\rho)=\rho V(\rho)$ is the traffic flow.
 
 The project extends this framework to a heterogeneous traffic system composed of two vehicle classes:
 
-- \(\rho_1\): small vehicles;
-- \(\rho_2\): large vehicles.
+- $\rho_1$: small vehicles;
+- $\rho_2$: large vehicles.
 
 Unlike standard multiclass models, the two classes are assigned different maximum occupied-space thresholds. This allows the model to reproduce situations in which large vehicles become stationary while smaller vehicles continue moving through the remaining available space.
 
@@ -31,9 +35,9 @@ Unlike standard multiclass models, the two classes are assigned different maximu
 
 The total occupied space is defined as
 
-\[
+$$
 r = \rho_1 + \rho_2.
-\]
+$$
 
 The model contains two traffic regimes:
 
@@ -41,35 +45,72 @@ The model contains two traffic regimes:
 
 Both vehicle classes move and satisfy a system of conservation laws:
 
-\[
+$$
 \begin{cases}
-(\rho_1)_t + (\rho_1 V_1(r))_x = 0, \\
-(\rho_2)_t + (\rho_2 V_2(r))_x = 0.
+\displaystyle
+\frac{\partial \rho_1}{\partial t}
++
+\frac{\partial}{\partial x}
+\left(\rho_1 V_1(r)\right)
+= 0, \\
+\displaystyle
+\frac{\partial \rho_2}{\partial t}
++
+\frac{\partial}{\partial x}
+\left(\rho_2 V_2(r)\right)
+= 0.
 \end{cases}
-\]
+$$
 
 ### Creeping phase
 
 When congestion reaches the maximum density allowed for large vehicles, the second class becomes stationary:
 
-\[
+
+$$
 \begin{cases}
-(\rho_1)_t + (\rho_1 V_1(r))_x = 0, \\
-(\rho_2)_t = 0.
+\displaystyle
+\frac{\partial \rho_1}{\partial t}
++
+\frac{\partial}{\partial x}
+\left(\rho_1 V_1(r)\right)
+= 0, \\
+\displaystyle
+\frac{\partial \rho_2}{\partial t}
+= 0.
 \end{cases}
-\]
+$$
 
 Small vehicles can therefore continue moving even when the large-vehicle population is blocked.
 
 For the numerical experiments, linear Greenshields-type velocity functions are used:
 
-\[
-V_1(r)=v_1^{max}\left(1-\frac{r}{r_1^{max}}\right),
-\]
+```math
+\begin{aligned}
+V_1(r)
+&=
+v^{m}
+\left(
+1-\frac{r}{r_1^{m}}
+\right), \\
 
-\[
-V_2(r)=v_2^{max}\left(1-\frac{r}{r_2^{max}}\right).
-\]
+V_2(r)
+&=
+v^{m}
+\left(
+1-\frac{r}{r_2^{m}}
+\right).
+\end{aligned}
+```
+
+
+The two maximum occupied-space values satisfy
+
+$$
+r_2^{m} < r_1^{m},
+$$
+
+which is what makes it possible for the large-vehicle class to become stationary while small vehicles can still move.
 
 ## Numerical Method
 
@@ -77,29 +118,47 @@ The model is solved numerically using an extension of **Godunov's method** based
 
 The computational domain is divided into cells and the density of each vehicle class is updated through the numerical fluxes exchanged between neighbouring cells:
 
-\[
-\rho_{j,i}^{n+1}
+```math
+\rho_{j,i}^{\,n+1}
 =
-\rho_{j,i}^{n}
+\rho_{j,i}^{\,n}
 -
 \frac{\Delta t}{\Delta x}
 \left(
-F_{j,i+1/2}^{n}
+F_{j,i+\frac{1}{2}}^{\,n}
 -
-F_{j,i-1/2}^{n}
+F_{j,i-\frac{1}{2}}^{\,n}
 \right).
-\]
+```
 
-The interface fluxes are determined using **sending and receiving functions**, representing respectively:
+Here:
 
-- the maximum flow that the upstream cell can send;
-- the maximum flow that the downstream cell can receive.
+- $\Delta x$ is the spatial step;
+- $\Delta t$ is the time step;
+- $\rho_{j,i}^{\,n}$ is the density of vehicle class $j$ in cell $i$ at time $t=n\Delta t$;
+- $F_{j,i+\frac{1}{2}}^{\,n}$ represents the numerical flux between neighbouring cells.
 
-The time step satisfies the CFL stability condition:
+The interface fluxes are obtained using **sending** and **receiving functions**, following the logic of the Cell Transmission Model.
 
-\[
-v^{max}\frac{\Delta t}{\Delta x} \leq 1.
-\]
+For a single traffic class, the numerical flux takes the form
+
+```math
+F_{i+\frac{1}{2}}^{\,n}
+=
+\min
+\left\{
+S\left(\rho_i^n\right),
+R\left(\rho_{i+1}^n\right)
+\right\},
+```
+
+where $S(\rho)$ is the sending function and $R(\rho)$ is the receiving function.
+
+The time step must satisfy the CFL stability condition:
+
+$$
+v^{m}\frac{\Delta t}{\Delta x} \leq 1.
+$$
 
 ## Numerical Experiments
 
@@ -131,29 +190,37 @@ This experiment illustrates how the model can reproduce both **overtaking in fre
 
 ## Model Parameters
 
-For the creeping model, the numerical experiments use:
+For the creeping model, the numerical experiments use
 
-\[
-v_1^{max}=v_2^{max}=1.8,
-\]
+$$
+v_1^{m}=v_2^{m}=1.8,
+$$
 
-\[
-r_1^{max}=1.8, \qquad r_2^{max}=1.0.
-\]
+and
+
+$$
+r_1^{m}=1.8,
+\qquad
+r_2^{m}=1.0.
+$$
 
 The computational domain is
 
-\[
-x \in [0,50]
-\]
+$$
+x \in [0,50],
+$$
 
 with spatial discretisation
 
-\[
+$$
 \Delta x = 0.05.
-\]
+$$
 
-The time step is selected according to the CFL condition.
+The time step $\Delta t$ is selected according to the CFL condition
+
+$$
+\Delta t \leq \frac{\Delta x}{v^{m}}.
+$$
 
 ## Main Takeaways
 
